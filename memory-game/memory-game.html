@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Memory Game</title>
+  <style>
+    * { box-sizing: border-box; }
+    html,body { height: 100%; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: url('bg.jfif') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    .wrap {
+      width: 720px;
+      max-width: 95vw;
+      padding: 28px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0 0 18px 0;
+      color: #fff;
+      font-size: 2.2rem;
+      font-weight: 900;
+      text-align: center;
+      text-shadow:
+        -2px -2px 0 #000,
+         2px -2px 0 #000,
+        -2px  2px 0 #000,
+         2px  2px 0 #000;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .card {
+      perspective: 1000px;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      backface-visibility: hidden;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+    }
+
+    .face.front {
+      background: #000;
+      color: #fff;
+      font-size: 2.2rem;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.08);
+    }
+
+    .face.back {
+      transform: rotateY(180deg);
+      background: #fff;
+    }
+
+    .face.back img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #status {
+      color: white;
+      font-weight: 900;
+      font-size: 1.2rem;
+      display: none;
+      text-shadow:
+        -1.5px -1.5px 0 #000,
+         1.5px -1.5px 0 #000,
+        -1.5px  1.5px 0 #000,
+         1.5px  1.5px 0 #000;
+    }
+
+    #restart {
+      background: rgba(255,255,255,0.95);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.3s;
+    }
+
+    #restart:hover {
+      background: #ddd;
+    }
+
+    @media (max-width: 520px) {
+      .wrap { padding: 16px; }
+      .game-board { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🧠 Memory Game</h1>
+
+    <div class="game-board" id="gameBoard"></div>
+
+    <div class="controls">
+      <button id="restart">Restart Game</button>
+      <div id="status">🎉 You matched all pairs!</div>
+    </div>
+  </div>
+
+  <script>
+    const images = [
+      'img1.jfif', 'img2.jfif', 'img3.jfif',
+      'img4.jfif', 'img5.jfif', 'img6.jfif'
+    ];
+
+    let cardValues = [...images, ...images];
+
+    const board = document.getElementById('gameBoard');
+    const status = document.getElementById('status');
+    const restartBtn = document.getElementById('restart');
+
+    let first = null;
+    let second = null;
+    let lock = false;
+    let matches = 0;
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function buildBoard() {
+      board.innerHTML = '';
+      status.style.display = 'none';
+      matches = 0;
+      first = null;
+      second = null;
+      lock = false;
+
+      const shuffled = shuffleArray(cardValues.slice());
+
+      shuffled.forEach((src, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.value = src;
+
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="face front">?</div>
+            <div class="face back"><img src="${src}" alt="card ${index}"></div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          if (lock) return;
+          if (card === first) return;
+          if (card.classList.contains('matched')) return;
+
+          card.classList.add('flipped');
+
+          if (!first) {
+            first = card;
+            return;
+          }
+
+          second = card;
+          lock = true;
+          setTimeout(() => checkMatch(), 600);
+        });
+
+        board.appendChild(card);
+      });
+    }
+
+    function checkMatch() {
+      if (!first || !second) { lock = false; return; }
+      const v1 = first.dataset.value;
+      const v2 = second.dataset.value;
+
+      if (v1 === v2) {
+        first.classList.add('matched');
+        second.classList.add('matched');
+        matches += 1;
+        resetTurn();
+        if (matches === images.length) {
+          setTimeout(() => {
+            status.style.display = 'block';
+          }, 400);
+        }
+      } else {
+        first.classList.remove('flipped');
+        second.classList.remove('flipped');
+        resetTurn();
+      }
+    }
+
+    function resetTurn() {
+      first = null;
+      second = null;
+      lock = false;
+    }
+
+    restartBtn.addEventListener('click', () => {
+      restartBtn.disabled = true;
+      setTimeout(() => restartBtn.disabled = false, 400);
+      buildBoard();
+    });
+
+    buildBoard();
+  </script>
+</body>
+</html>
