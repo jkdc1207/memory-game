@@ -1,0 +1,76 @@
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: url("background.jfif") no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: white;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 3em;
+  color: white;
+  text-shadow: 3px 3px 0 black, -3px 3px 0 black, 3px -3px 0 black, -3px -3px 0 black;
+}
+
+.game-container {
+  display: grid;
+  grid-template-columns: repeat(4, 120px);
+  grid-gap: 15px;
+  margin-top: 30px;
+}
+
+.card {
+  width: 120px;
+  height: 120px;
+  background-color: black;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+.card img {
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  object-fit: cover;
+  backface-visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.card .front {
+  background: black url("question.png") center/60% no-repeat;
+  transform: rotateY(0deg);
+}
+
+.card .back {
+  transform: rotateY(180deg);
+}
+
+.card.flip {
+  transform: rotateY(180deg);
+}
+
+#win-message {
+  font-size: 2em;
+  margin-top: 30px;
+  color: white;
+  text-shadow: 3px 3px 0 black, -3px 3px 0 black, 3px -3px 0 black, -3px -3px 0 black;
+}
+
+.hidden {
+  display: none;
+}
